@@ -1,189 +1,264 @@
-# Lab – React Client for Blueprints (Redux + Axios + JWT)
+# Lab 06 - Cliente React para Blueprints
 
-> Basado en el cliente HTML/JS del repo de referencia, este laboratorio moderniza el _frontend_ con **React + Vite**, **Redux Toolkit**, **Axios** (con interceptores y JWT), **React Router** y pruebas con **Vitest + Testing Library**.
+Este repositorio corresponde a la solucion del **Lab 06 de ARSW**.  
+La idea del laboratorio fue construir un cliente moderno en React para consumir el backend de Blueprints de los labs anteriores (Lab 4 y Lab 5), aplicando arquitectura limpia, manejo de estado global y buenas practicas de calidad.
 
-## Objetivos de aprendizaje
+---
 
-- Diseñar una SPA en React aplicando **componetización** y **Redux (reducers/slices)**.
-- Consumir APIs REST de Blueprints con **Axios** y manejar **estados de carga/errores**.
-- Integrar **autenticación JWT** con interceptores y rutas protegidas.
-- Aplicar buenas prácticas: estructura de carpetas, `.env`, linters, testing, CI.
+## 1. Objetivo del laboratorio
 
-## Requisitos previos
+Desarrollar una SPA que permita:
 
-- Tener corriendo el backend de Blueprints de los **Labs 3 y 4** (APIs + seguridad).
-- Node.js 18+ y npm.
+- consultar blueprints por autor,
+- abrir y visualizar blueprints en un canvas,
+- crear, actualizar y eliminar blueprints,
+- autenticar usuarios con JWT,
+- manejar estados de carga y errores en UI,
+- incluir pruebas y pipeline de CI.
 
-Ver la especificación de glosario clave, consulta las [Definiciones del laboratorio](./DEFINICIONES.md).
+---
 
-## Endpoints esperados (ajústalos si tu backend quedo diferente)
+## 2. Stack tecnologico usado
 
-- `GET /api/v1/blueprints` → lista general o catálogo para derivar autores.
-- `GET /api/v1/blueprints/{author}`
-- `GET /api/v1/blueprints/{author}/{name}`
-- `POST /api/v1/blueprints` (requiere JWT)
-- `POST /auth/login` → `{ token }` o `{ access_token }`
+- **React 18 + Vite**
+- **Redux Toolkit + React Redux**
+- **React Router**
+- **Axios** con interceptores JWT
+- **Vitest + Testing Library**
+- **ESLint + Prettier**
+- **GitHub Actions** (lint + test + build)
 
-Configura la URL base en `.env`.
+---
 
-## Cómo arrancar
+## 3. Arquitectura del frontend
 
-```bash
-npm install
-cp .env.example .env
-# edita .env con la URL del backend
-npm run dev
+La aplicacion sigue una separacion por capas:
+
+1. **UI (pages/components)**: renderiza vistas y captura eventos del usuario.
+2. **Estado global (Redux slice)**: concentra reglas de negocio del cliente y estados async.
+3. **Servicios**: capa de acceso a datos (`apimock` o `apiclient`) con interfaz comun.
+4. **API backend**: endpoints REST del proyecto Blueprints.
+
+Flujo general:
+
+`UI -> dispatch(thunk) -> blueprintsSlice -> blueprintsService -> apiclient/apimock -> backend/mock -> Redux -> UI`
+
+---
+
+## 4. Estructura principal del proyecto
+
+```text
+src/
+├─ components/
+│  ├─ BlueprintCanvas.jsx
+│  ├─ BlueprintForm.jsx
+│  └─ PrivateRoute.jsx
+├─ features/blueprints/
+│  └─ blueprintsSlice.js
+├─ pages/
+│  ├─ BlueprintsPage.jsx
+│  ├─ BlueprintDetailPage.jsx
+│  ├─ CreateBlueprintPage.jsx
+│  ├─ LoginPage.jsx
+│  └─ NotFound.jsx
+├─ services/
+│  ├─ apiClient.js
+│  ├─ apiclient.js
+│  ├─ apimock.js
+│  ├─ authStorage.js
+│  └─ blueprintsService.js
+├─ store/index.js
+├─ App.jsx
+└─ styles.css
 ```
 
-Abre `http://localhost:5173`
+---
 
-## Variables de entorno
+## 5. Variables de entorno
 
-Crea un archivo `.env` en la raíz:
+Copiar el archivo de ejemplo y ajustar segun el entorno local:
 
-```variable
+```bash
+cp .env.example .env
+```
+
+Contenido esperado:
+
+```env
 VITE_API_BASE_URL=http://localhost:8081
 VITE_BLUEPRINTS_PATH=/api/v1/blueprints
 VITE_AUTH_PATH=/auth/login
 VITE_USE_MOCK=false
 ```
 
-> **Tip:** en producción usa variables seguras o un _reverse proxy_.
+### Significado
 
-## Estructura
-
-```carpetas
-blueprints-react-lab/
-├─ src/
-│  ├─ components/
-│  ├─ features/blueprints/blueprintsSlice.js
-│  ├─ pages/
-│  ├─ services/apiClient.js   # axios + interceptores JWT
-│  ├─ store/index.js          # Redux Toolkit
-│  ├─ App.jsx, main.jsx, styles.css
-├─ tests/
-├─ .github/workflows/ci.yml
-├─ index.html, package.json, vite.config.js, README.md
-```
-
-## 📌 Requerimientos del laboratorio
-
-## 1. Canvas (lienzo)
-
-- Agregar un lienzo (Canvas) a la página.
-- Incluir un componente `BlueprintCanvas` con un identificador propio.
-- Definir dimensiones adecuadas (ej. `520×360`) para que no ocupe toda la pantalla pero permita dibujar los planos.
-
-## 2. Listar los planos de un autor
-
-- Permitir ingresar el nombre de un autor y consultar sus planos desde el backend (o mock).
-- Mostrar los resultados en una tabla con las siguientes columnas:
-  - Nombre del plano
-  - Número de puntos
-  - Botón `Open` para abrirlo
-
-## 3. Seleccionar un plano y graficarlo
-
-Al hacer clic en el botón `Open`, debe:
-
-- Actualizar un campo de texto con el nombre del plano actual.
-- Obtener los puntos del plano correspondiente.
-- Dibujar consecutivamente los segmentos de recta en el canvas y marcar cada punto.
-
-## 4. Servicios: `apimock` y `apiclient`
-
-- Implementar dos servicios con la misma interfaz:
-  - `apimock`: retorna datos de prueba desde memoria.
-  - `apiclient`: consume el API REST real con Axios.
-- La interfaz de ambos debe incluir los métodos:
-  - `getAll`
-  - `getByAuthor`
-  - `getByAuthorAndName`
-  - `create`
-- Habilitar el cambio entre `apimock` y `apiclient` con una sola línea de código:
-  - Definir un módulo `blueprintsService.js` que importe uno u otro según una variable en `.env`.
-  - Ejemplo en `.env` (Vite):
-
-```env
-VITE_USE_MOCK=true
-```
-
-- `VITE_USE_MOCK=true` usa el mock.
-- `VITE_USE_MOCK=false` usa el API real.
-
-## 5. Interfaz con React
-
-- El nombre del plano actual debe mostrarse en el DOM como parte del estado global (Redux).
-- Evitar manipular directamente el DOM; usar componentes y props/estado.
-
-## 6. Estilos
-
-- Agregar estilos para mejorar la presentación.
-- Se puede usar Bootstrap u otro framework CSS.
-- Ajustar la tabla, botones y tarjetas para acercarse al mock de referencia.
-
-## 7. Pruebas unitarias
-
-- Agregar pruebas con Vitest + Testing Library para validar:
-  - Render del canvas.
-  - Envío de formularios.
-  - Interacciones básicas con Redux (por ejemplo: dispatch de `fetchByAuthor`).
+- `VITE_API_BASE_URL`: host del backend.
+- `VITE_BLUEPRINTS_PATH`: ruta base de blueprints.
+- `VITE_AUTH_PATH`: endpoint de login.
+- `VITE_USE_MOCK`: cambia entre API real (`false`) y mock en memoria (`true`).
 
 ---
 
-### Notas rápidas y recomendaciones
+## 6. Funcionalidades implementadas
 
-- Para el canvas en tests con jsdom: agregar un mock de `HTMLCanvasElement.prototype.getContext` en `tests/setup.js`.
-- Para usar `@testing-library/jest-dom` con Vitest: en `tests/setup.js` importar `import '@testing-library/jest-dom'` y asegurarse de que Vitest provea el global `expect` (configurar `vitest.config.js` con la opción `test: { globals: true, setupFiles: './tests/setup.js' }`).
-- Para la conmutación de servicios en Vite, usar `import.meta.env.VITE_USE_MOCK` para leer la variable en tiempo de ejecución.
+### 6.1 Consulta y visualizacion de blueprints
 
-## 📌 Recomendaciones y actividades sugeridas para el exito del laboratorio
+- Busqueda por autor.
+- Tabla de resultados con nombre y numero de puntos.
+- Boton **Abrir** para cargar blueprint seleccionado.
+- Render del blueprint en `canvas` (lineas + puntos).
 
-1. **Redux avanzado**
-   - [ ] Agrega estados `loading/error` por _thunk_ y muéstralos en la UI.
-   - [ ] Implementa _memo selectors_ para derivar el top-5 de blueprints por cantidad de puntos.
-2. **Rutas protegidas**
-   - [ ] Crea un componente `<PrivateRoute>` y protege la creación/edición.
-3. **CRUD completo**
-   - [ ] Implementa `PUT /api/blueprints/{author}/{name}` y `DELETE ...` en el slice y en la UI.
-   - [ ] Optimistic updates (revertir si falla).
-4. **Dibujo interactivo**
-   - [ ] Reemplaza el `svg` por un lienzo donde el usuario haga _click_ para agregar puntos.
-   - [ ] Botón “Guardar” que envíe el blueprint.
-5. **Errores y _Retry_**
-   - [ ] Si `GET` falla, muestra un banner y un botón **Reintentar** que dispare el thunk.
-6. **Testing**
-   - [ ] Pruebas de `blueprintsSlice` (reducers puros).
-   - [ ] Pruebas de componentes con Testing Library (render, interacción).
-7. **CI/Lint/Format**
-   - [ ] Activa **GitHub Actions** (workflow incluido) → lint + test + build.
-8. **Docker (opcional)**
-   - [ ] Crea `Dockerfile` (+ `compose`) para front + backend.
+### 6.2 Canvas y dibujo interactivo
 
-## Criterios de evaluación
+- `BlueprintCanvas` dibuja grilla y puntos.
+- En vista de creacion se puede agregar puntos haciendo click en el canvas.
+- Boton para limpiar puntos antes de guardar.
 
-- Funcionalidad y cobertura de casos (30%)
-- Calidad de código y arquitectura (Redux, componentes, servicios) (25%)
-- Manejo de estado, errores, UX (15%)
-- Pruebas automatizadas (15%)
-- Seguridad (JWT/Interceptores/Rutas protegidas) (10%)
-- CI/Lint/Format (5%)
+### 6.3 Autenticacion JWT
 
-## Scripts
+- Pantalla de login (`/login`).
+- Soporte para respuesta con `token` o `access_token`.
+- Token almacenado en `localStorage`.
+- Interceptor agrega `Authorization: Bearer <token>`.
+- Cierre de sesion desde la barra de navegacion.
 
-- `npm run dev` – servidor de desarrollo Vite
-- `npm run build` – build de producción
-- `npm run preview` – previsualizar build
-- `npm run lint` – ESLint
-- `npm run format` – Prettier
-- `npm test` – Vitest
+### 6.4 Rutas protegidas
+
+- Componente `PrivateRoute` implementado.
+- Ruta de creacion protegida.
+- Si no hay sesion, el usuario se redirige a login.
+
+### 6.5 CRUD completo
+
+Se implementaron operaciones en UI + slice + servicios:
+
+- **Create**: crear blueprint nuevo.
+- **Read**: consultar por autor y consultar blueprint por autor/nombre.
+- **Update**:
+  - agregar punto (`PUT .../points`)
+  - actualizar blueprint completo (`PUT /api/v1/blueprints/{author}/{name}`)
+- **Delete**: eliminar blueprint desde tabla.
+
+### 6.6 Optimistic updates + rollback
+
+Para mejorar UX:
+
+- En **update** y **delete** se aplica actualizacion optimista en Redux.
+- Si el backend falla, se revierte automaticamente al estado anterior.
+
+### 6.7 Manejo de estados y errores
+
+- Estados `loading/succeeded/failed` por thunk.
+- Mensajes de error claros en UI.
+- Boton **Reintentar** cuando falla consulta de autor.
+
+### 6.8 Redux avanzado
+
+- Slice con estados por operacion (`authors`, `byAuthor`, `current`, `create`, `appendPoint`, `update`, `delete`).
+- Selector memoizado para top-5 de blueprints por cantidad de puntos.
+- Render del top-5 en la pagina principal.
 
 ---
 
-### Extensiones propuestas del reto
+## 7. Endpoints esperados del backend
 
-- **Redux Toolkit Query** para _caching_ de requests.
-- **MSW** para _mocks_ sin backend.
-- **Dark mode** y diseño responsive.
+El frontend trabaja con el backend del Lab 5 (seguridad + API versionada):
 
-> Este proyecto es un punto de partida para que tus estudiantes evolucionen el cliente clásico de Blueprints a una SPA moderna con prácticas de la industria.
+- `POST /auth/login`
+- `GET /api/v1/blueprints`
+- `GET /api/v1/blueprints/{author}`
+- `GET /api/v1/blueprints/{author}/{name}`
+- `POST /api/v1/blueprints`
+- `PUT /api/v1/blueprints/{author}/{name}`
+- `PUT /api/v1/blueprints/{author}/{name}/points`
+- `DELETE /api/v1/blueprints/{author}/{name}`
+
+---
+
+## 8. Como ejecutar el proyecto
+
+### 8.1 Instalar dependencias
+
+```bash
+npm install
+```
+
+### 8.2 Configurar entorno
+
+```bash
+cp .env.example .env
+```
+
+### 8.3 Levantar frontend
+
+```bash
+npm run dev
+```
+
+Frontend:
+
+- `http://localhost:5173`
+
+Backend esperado:
+
+- `http://localhost:8081`
+
+---
+
+## 9. Pruebas y calidad
+
+### Ejecutar pruebas
+
+```bash
+npm test
+```
+
+### Ejecutar lint
+
+```bash
+npm run lint
+```
+
+### Build de produccion
+
+```bash
+npm run build
+```
+
+Actualmente hay pruebas unitarias para:
+
+- render de canvas,
+- formulario,
+- interaccion basica de la pagina principal,
+- reducers y selectores del slice,
+- escenarios de optimistic update/rollback.
+
+---
+
+## 10. CI con GitHub Actions
+
+Se agrego workflow en `.github/workflows/ci.yml` que ejecuta:
+
+1. instalacion de dependencias,
+2. lint,
+3. pruebas,
+4. build.
+
+Esto ayuda a validar automaticamente la calidad del codigo antes de integrar cambios.
+
+---
+
+## 11. Estado final del laboratorio
+
+En esta entrega se completo el laboratorio con:
+
+- arquitectura modular por capas,
+- conmutacion entre mock y API real,
+- autenticacion JWT funcional,
+- rutas protegidas,
+- CRUD completo,
+- optimistic updates con rollback,
+- manejo de errores y retry,
+- pruebas automatizadas,
+
