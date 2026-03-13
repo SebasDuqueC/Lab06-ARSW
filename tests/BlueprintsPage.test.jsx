@@ -4,11 +4,14 @@ import { Provider } from 'react-redux'
 import { configureStore, createSlice } from '@reduxjs/toolkit'
 import BlueprintsPage from '../src/pages/BlueprintsPage.jsx'
 
+const emptyTopFive = []
+
 // Mock de thunks del slice para no requerir backend
 vi.mock('../src/features/blueprints/blueprintsSlice.js', () => ({
   fetchAuthors: () => ({ type: 'blueprints/fetchAuthors' }),
   fetchByAuthor: (author) => ({ type: 'blueprints/fetchByAuthor', payload: author }),
   fetchBlueprint: (payload) => ({ type: 'blueprints/fetchBlueprint', payload }),
+  selectTopFiveBlueprintsByPoints: () => emptyTopFive,
 }))
 
 function makeStore(preloaded) {
@@ -18,8 +21,20 @@ function makeStore(preloaded) {
       authors: [],
       byAuthor: {},
       current: null,
-      status: 'idle',
-      error: null,
+      status: {
+        authors: 'idle',
+        byAuthor: 'idle',
+        current: 'idle',
+        create: 'idle',
+        appendPoint: 'idle',
+      },
+      error: {
+        authors: null,
+        byAuthor: null,
+        current: null,
+        create: null,
+        appendPoint: null,
+      },
       ...preloaded,
     },
     reducers: {},

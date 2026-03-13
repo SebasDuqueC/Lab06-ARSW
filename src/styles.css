@@ -38,11 +38,16 @@ a {
   border: 1px solid #334155;
   background: #1f2937;
   cursor: pointer;
+  color: #e2e8f0;
 }
 .btn.primary {
   background: #2563eb;
   border-color: #1d4ed8;
   color: white;
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .grid {
   display: grid;
@@ -76,4 +81,16 @@ nav a {
 }
 nav a.active {
   background: #334155;
+}
+.alert {
+  border-radius: 10px;
+  padding: 12px;
+}
+.alert.error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+}
+.error-text {
+  color: #f87171;
+  margin-bottom: 0;
 }

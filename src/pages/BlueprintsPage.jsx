@@ -4,12 +4,14 @@ import {
   fetchAuthors,
   fetchByAuthor,
   fetchBlueprint,
+  selectTopFiveBlueprintsByPoints,
 } from '../features/blueprints/blueprintsSlice.js'
 import BlueprintCanvas from '../components/BlueprintCanvas.jsx'
 
 export default function BlueprintsPage() {
   const dispatch = useDispatch()
-  const { byAuthor, current, status } = useSelector((s) => s.blueprints)
+  const { byAuthor, current, status, error } = useSelector((s) => s.blueprints)
+  const topFive = useSelector(selectTopFiveBlueprintsByPoints)
   const [authorInput, setAuthorInput] = useState('')
   const [selectedAuthor, setSelectedAuthor] = useState('')
   const items = byAuthor[selectedAuthor] || []
@@ -33,6 +35,11 @@ export default function BlueprintsPage() {
     dispatch(fetchBlueprint({ author: bp.author, name: bp.name }))
   }
 
+  const retryCurrentAuthor = () => {
+    if (!selectedAuthor) return
+    dispatch(fetchByAuthor(selectedAuthor))
+  }
+
   return (
     <div className="grid" style={{ gridTemplateColumns: '1.1fr 1.4fr', gap: 24 }}>
       <section className="grid" style={{ gap: 16 }}>
@@ -49,14 +56,24 @@ export default function BlueprintsPage() {
               Get blueprints
             </button>
           </div>
+          {status.authors === 'loading' && <p style={{ marginBottom: 0 }}>Cargando autores...</p>}
+          {error.authors && <p className="error-text">Error cargando autores: {error.authors}</p>}
         </div>
 
         <div className="card">
           <h3 style={{ marginTop: 0 }}>
             {selectedAuthor ? `${selectedAuthor}'s blueprints:` : 'Results'}
           </h3>
-          {status === 'loading' && <p>Cargando...</p>}
-          {!items.length && status !== 'loading' && <p>Sin resultados.</p>}
+          {status.byAuthor === 'loading' && <p>Cargando resultados...</p>}
+          {error.byAuthor && (
+            <div className="alert error" role="alert">
+              <p style={{ margin: 0 }}>No se pudo consultar el autor: {error.byAuthor}</p>
+              <button className="btn" style={{ marginTop: 10 }} onClick={retryCurrentAuthor}>
+                Reintentar
+              </button>
+            </div>
+          )}
+          {!items.length && status.byAuthor !== 'loading' && !error.byAuthor && <p>Sin resultados.</p>}
           {!!items.length && (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -111,10 +128,26 @@ export default function BlueprintsPage() {
           )}
           <p style={{ marginTop: 12, fontWeight: 700 }}>Total user points: {totalPoints}</p>
         </div>
+
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>Top 5 blueprints por puntos</h3>
+          {!topFive.length && <p style={{ marginBottom: 0 }}>Sin datos todavía.</p>}
+          {!!topFive.length && (
+            <ol style={{ margin: 0, paddingLeft: 20 }}>
+              {topFive.map((bp) => (
+                <li key={`${bp.author}:${bp.name}`}>
+                  {bp.author} / {bp.name} ({bp.points?.length || 0} puntos)
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
       </section>
 
       <section className="card">
         <h3 style={{ marginTop: 0 }}>Current blueprint: {current?.name || '—'}</h3>
+        {status.current === 'loading' && <p>Cargando blueprint...</p>}
+        {error.current && <p className="error-text">Error abriendo blueprint: {error.current}</p>}
         <BlueprintCanvas points={current?.points || []} />
       </section>
     </div>

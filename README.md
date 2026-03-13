@@ -18,11 +18,11 @@ Ver la especificación de glosario clave, consulta las [Definiciones del laborat
 
 ## Endpoints esperados (ajústalos si tu backend quedo diferente)
 
-- `GET /api/blueprints` → lista general o catálogo para derivar autores.
-- `GET /api/blueprints/{author}`
-- `GET /api/blueprints/{author}/{name}`
-- `POST /api/blueprints` (requiere JWT)
-- `POST /api/auth/login` → `{ token }`
+- `GET /api/v1/blueprints` → lista general o catálogo para derivar autores.
+- `GET /api/v1/blueprints/{author}`
+- `GET /api/v1/blueprints/{author}/{name}`
+- `POST /api/v1/blueprints` (requiere JWT)
+- `POST /auth/login` → `{ token }` o `{ access_token }`
 
 Configura la URL base en `.env`.
 
@@ -42,7 +42,10 @@ Abre `http://localhost:5173`
 Crea un archivo `.env` en la raíz:
 
 ```variable
-VITE_API_BASE_URL=http://localhost:8080/api
+VITE_API_BASE_URL=http://localhost:8081
+VITE_BLUEPRINTS_PATH=/api/v1/blueprints
+VITE_AUTH_PATH=/auth/login
+VITE_USE_MOCK=false
 ```
 
 > **Tip:** en producción usa variables seguras o un _reverse proxy_.

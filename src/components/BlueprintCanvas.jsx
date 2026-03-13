@@ -1,12 +1,18 @@
 import { useEffect, useRef } from 'react'
 
-export default function BlueprintCanvas({ points = [], width = 520, height = 360 }) {
+export default function BlueprintCanvas({
+  points = [],
+  width = 520,
+  height = 360,
+  onCanvasClick = null,
+}) {
   const ref = useRef(null)
 
   useEffect(() => {
     const canvas = ref.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
+    if (!ctx) return
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.fillStyle = '#0b1220'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -48,12 +54,25 @@ export default function BlueprintCanvas({ points = [], width = 520, height = 360
       ref={ref}
       width={width}
       height={height}
+      aria-label="blueprint-canvas"
+      onClick={(event) => {
+        if (!onCanvasClick) return
+        const canvas = ref.current
+        if (!canvas) return
+        const rect = canvas.getBoundingClientRect()
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+        const x = Math.round((event.clientX - rect.left) * scaleX)
+        const y = Math.round((event.clientY - rect.top) * scaleY)
+        onCanvasClick({ x, y })
+      }}
       style={{
         background: '#0b1220',
         border: '1px solid #334155',
         borderRadius: 12,
         width: '100%',
         maxWidth: width,
+        cursor: onCanvasClick ? 'crosshair' : 'default',
       }}
     />
   )

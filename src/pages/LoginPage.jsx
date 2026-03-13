@@ -1,7 +1,24 @@
 import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import api from '../services/apiClient.js'
+import { setToken } from '../services/authStorage.js'
+
+const authPath = import.meta.env.VITE_AUTH_PATH || '/auth/login'
+
+function readToken(payload) {
+  if (!payload || typeof payload !== 'object') return null
+  if (payload.token) return payload.token
+  if (payload.access_token) return payload.access_token
+  if (payload.data && typeof payload.data === 'object') {
+    return payload.data.token || payload.data.access_token || null
+  }
+  return null
+}
 
 export default function LoginPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const redirectTo = location.state?.from?.pathname || '/'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
@@ -10,9 +27,13 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     try {
-      const { data } = await api.post('/auth/login', { username, password })
-      localStorage.setItem('token', data.token)
-      alert('Login exitoso')
+      const { data } = await api.post(authPath, { username, password })
+      const token = readToken(data)
+      if (!token) {
+        throw new Error('Token no encontrado en la respuesta del login')
+      }
+      setToken(token)
+      navigate(redirectTo, { replace: true })
     } catch (e) {
       setError('Credenciales inválidas o servidor no disponible')
     }
